@@ -1,6 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import relationship
+from typing import List
+from sqlalchemy import ForeignKey
 
 db = SQLAlchemy()
 
@@ -23,6 +26,13 @@ class User(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False)
 
+    nave: Mapped[List["Nave"]] = relationship(back_populates="user")
+    arma: Mapped[List["Arma"]] = relationship(back_populates="user")
+    favorite_arma: Mapped[List["Favorite_arma"]] = relationship(back_populates="user")
+
+    favorite_nave: Mapped[List["Favorite_nave"]] = relationship(back_populates="user")
+    
+
     def serialize(self):
         return {
             "id": self.id,
@@ -35,15 +45,17 @@ class Nave(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     tipo: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
-    dimension: Mapped[int] = mapped_column(primary_key=True)
-    id_user: Mapped[int] = mapped_column(primary_key=True)
+    dimension: Mapped[int] = mapped_column(nullable=False)
+    favorite_nave: Mapped[List["Favorite_nave"]] = relationship(back_populates="nave")
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    user: Mapped["User"] = relationship(back_populates="nave")
     
     def serialize(self):
         return {
             "id": self.id,
             "tipo": self.tipo,
             "description": self.description,
-            "tidimensionpo": self.dimension,
             # do not serialize the password, its a security breach
         }
     
@@ -51,9 +63,11 @@ class Nave(db.Model):
 
 class Arma(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    id_user: Mapped[int] = mapped_column(primary_key=True)
-    id_nave: Mapped[int] = mapped_column(primary_key=True)
-    
+
+    favorite_arma: Mapped[List["Favorite_arma"]] = relationship(back_populates="arma")
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    user: Mapped["User"] = relationship(back_populates="arma")
 
     def serialize(self):
         return {
@@ -75,12 +89,33 @@ class Location(db.Model):
         }
 
 
-class Favorite(db.Model):
+class Favorite_arma(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    id_user: Mapped[int] = mapped_column(primary_key=True)
-    id_nave: Mapped[int] = mapped_column(primary_key=True)
-    id_location: Mapped[int] = mapped_column(primary_key=True)
-    id_arma: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    user: Mapped["User"] = relationship(back_populates="favorite_arma")
+
+    arma_id: Mapped[int] = mapped_column(ForeignKey("arma.id"))
+    arma: Mapped["Arma"] = relationship(back_populates="favorite_arma")
+
+   
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            # do not serialize the password, its a security breach
+        }
+
+class Favorite_nave(db.Model):
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    user: Mapped["User"] = relationship(back_populates="favorite_nave")
+
+    nave_id: Mapped[int] = mapped_column(ForeignKey("nave.id"))
+    nave: Mapped["Nave"] = relationship(back_populates="favorite_nave")
+    
+    
    
 
     def serialize(self):
